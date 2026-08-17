@@ -38,7 +38,7 @@
     }
 
     .glass-card {
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(16px);
       border: 1px solid rgba(212, 175, 55, 0.3);
       box-shadow: 0 0 30px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.1);
@@ -113,15 +113,16 @@
 
     .file-upload-btn {
       display: inline-block;
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.1);
+      padding: 12px 24px;
+      background: rgba(0, 229, 255, 0.1);
       border: 1px dashed #00E5FF;
       border-radius: 10px;
       cursor: pointer;
       margin-bottom: 15px;
       transition: 0.3s;
+      font-weight: 600;
     }
-    .file-upload-btn:hover { background: rgba(0, 229, 255, 0.2); }
+    .file-upload-btn:hover { background: rgba(0, 229, 255, 0.25); }
   </style>
 </head>
 <body>
@@ -130,7 +131,6 @@
 
   <div class="container">
     
-    <!-- LOGIN SCREEN -->
     <div id="login-screen" class="glass-card">
       <h1 class="title">NOVA GENESIS</h1>
       <p class="subtitle">OFFICIAL ENTRY PASS PORTAL</p>
@@ -149,7 +149,6 @@
       <p id="error-msg" style="color:#ff4757; font-size:0.85rem; margin-top:12px; display:none; font-weight:600;">Invalid Username or Password!</p>
     </div>
 
-    <!-- MAIN PORTAL SCREEN -->
     <div id="portal-screen" class="glass-card">
       <h2 id="welcome-text" class="title" style="font-size: 1.3rem;"></h2>
       <p class="subtitle">Upload profile photo to generate pass</p>
@@ -158,6 +157,8 @@
         📷 Upload Your Photo
         <input type="file" id="photoInput" accept="image/*" style="display:none;">
       </label>
+
+      <p id="status-text" style="font-size: 0.85rem; color: #00E5FF; display:none; margin-bottom:10px;">Generating Pass... Please wait ⏳</p>
 
       <div id="canvas-wrapper" style="display:none;">
         <canvas id="passCanvas"></canvas>
@@ -171,7 +172,7 @@
   </div>
 
   <script>
-    // USERS LIST FROM YOUR EXCEL SHEET (93 USERS)
+    // USERS LIST FROM YOUR EXCEL SHEET (93 USERS) [cite: 1]
     const usersList = [
       { "username": "SHASHIKALA", "pass": "BCOM1STSEM", "name": "Shashikala", "id": "NOVAGEN.001" },
       { "username": "VINITA", "pass": "BCOM1STSEM", "name": "Vinita", "id": "NOVAGEN.002" },
@@ -307,7 +308,7 @@
     }
     animateParticles();
 
-    // FLEXIBLE LOGIN FUNCTION (Case-Insensitive & Whitespace Trimmed)
+    // LOGIN FUNCTION
     function handleLogin() {
       const uInput = document.getElementById("username").value.trim().toUpperCase();
       const pInput = document.getElementById("password").value.trim().toUpperCase();
@@ -346,46 +347,117 @@
       }
     }
 
-    // Photo Render & Pass Generator
+    // PHOTO UPLOAD & ROBUST PASS GENERATOR
     document.getElementById("photoInput").addEventListener("change", function(e) {
-      if(!e.target.files[0]) return;
+      if(!e.target.files || !e.target.files[0]) return;
+      
+      const statusText = document.getElementById("status-text");
+      statusText.style.display = "block";
       
       const reader = new FileReader();
       reader.onload = function(event) {
         const userPhoto = new Image();
         userPhoto.onload = function() {
+          
+          const canvas = document.getElementById("passCanvas");
+          const ctx = canvas.getContext("2d");
+
           const masterImg = new Image();
           masterImg.src = 'master_card.png';
-          
-          masterImg.onload = function() {
-            const canvas = document.getElementById("passCanvas");
-            const ctx = canvas.getContext("2d");
 
-            canvas.width = masterImg.width;
-            canvas.height = masterImg.height;
+          function renderCard(bgImg = null) {
+            if(bgImg) {
+              canvas.width = bgImg.width;
+              canvas.height = bgImg.height;
+              ctx.drawImage(bgImg, 0, 0);
+              
+              // Draw User Photo
+              ctx.drawImage(userPhoto, 115, 345, 350, 420);
 
-            // Draw Base Card
-            ctx.drawImage(masterImg, 0, 0);
+              // Draw Text
+              ctx.fillStyle = "#FFD700";
+              ctx.font = "bold 38px Poppins, sans-serif";
+              ctx.fillText(currentUser.name, 540, 415);
 
-            // Draw User Photo
-            ctx.drawImage(userPhoto, 115, 345, 350, 420);
+              ctx.fillStyle = "#FFFFFF";
+              ctx.font = "bold 32px Poppins, sans-serif";
+              ctx.fillText(currentUser.id, 540, 510);
+            } else {
+              // Custom Fallback Canvas Card if master_card.png fails to load
+              canvas.width = 1000;
+              canvas.height = 1400;
 
-            // Draw Name and ID on Pass
-            ctx.fillStyle = "#FFD700";
-            ctx.font = "bold 38px Poppins";
-            ctx.fillText(currentUser.name, 540, 415);
+              // Dark Futuristic Card Background
+              ctx.fillStyle = "#0a0e1a";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 32px Poppins";
-            ctx.fillText(currentUser.id, 540, 510);
+              // Card Border Glow
+              ctx.strokeStyle = "#FFD700";
+              ctx.lineWidth = 10;
+              ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
 
+              // Header Text
+              ctx.fillStyle = "#00E5FF";
+              ctx.font = "bold 55px Orbitron, sans-serif";
+              ctx.textAlign = "center";
+              ctx.fillText("NOVA GENESIS 2026", canvas.width / 2, 130);
+
+              ctx.fillStyle = "#FFD700";
+              ctx.font = "28px Poppins, sans-serif";
+              ctx.fillText("VIRTUAL FRESHERS PARTY PASS", canvas.width / 2, 190);
+
+              // Draw User Photo Box
+              ctx.strokeStyle = "#00E5FF";
+              ctx.lineWidth = 6;
+              ctx.strokeRect(100, 280, 380, 480);
+              ctx.drawImage(userPhoto, 105, 285, 370, 470);
+
+              // Details Section
+              ctx.textAlign = "left";
+              ctx.fillStyle = "#94a3b8";
+              ctx.font = "28px Poppins, sans-serif";
+              ctx.fillText("GUEST NAME:", 520, 360);
+
+              ctx.fillStyle = "#FFD700";
+              ctx.font = "bold 42px Poppins, sans-serif";
+              ctx.fillText(currentUser.name, 520, 420);
+
+              ctx.fillStyle = "#94a3b8";
+              ctx.font = "28px Poppins, sans-serif";
+              ctx.fillText("UNIQUE ID:", 520, 520);
+
+              ctx.fillStyle = "#00E5FF";
+              ctx.font = "bold 38px Orbitron, sans-serif";
+              ctx.fillText(currentUser.id, 520, 580);
+
+              // Date/Venue Info Box
+              ctx.fillStyle = "rgba(255,255,255,0.05)";
+              ctx.fillRect(100, 850, 800, 380);
+              ctx.strokeStyle = "rgba(212,175,55,0.4)";
+              ctx.strokeRect(100, 850, 800, 380);
+
+              ctx.fillStyle = "#FFD700";
+              ctx.font = "bold 32px Poppins, sans-serif";
+              ctx.fillText("EVENT DETAILS", 140, 910);
+
+              ctx.fillStyle = "#FFFFFF";
+              ctx.font = "28px Poppins, sans-serif";
+              ctx.fillText("DATE: AUGUST 15, 2026", 140, 980);
+              ctx.fillText("TIME: 9:00 AM TO 4:30 PM (IST)", 140, 1040);
+              ctx.fillText("VENUE: THE EXAM BUILDING (VIRTUAL)", 140, 1100);
+            }
+
+            statusText.style.display = "none";
             document.getElementById("canvas-wrapper").style.display = "block";
             gsap.from("#canvas-wrapper", { duration: 0.8, y: 20, opacity: 0 });
 
             const downloadBtn = document.getElementById("downloadBtn");
             downloadBtn.href = canvas.toDataURL("image/jpeg", 0.95);
             downloadBtn.download = `NG2026_${currentUser.name.replace(/\s+/g, '_')}.jpg`;
-          };
+          }
+
+          masterImg.onload = function() { renderCard(masterImg); };
+          masterImg.onerror = function() { renderCard(null); }; // Fallback trigger
         };
         userPhoto.src = event.target.result;
       };
