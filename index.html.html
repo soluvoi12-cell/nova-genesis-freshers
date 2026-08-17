@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOVA GENESIS 2026 - Access Portal</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;800&family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #05070f;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 90%;
+      max-width: 450px;
+      text-align: center;
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.2), inset 0 0 15px rgba(212, 175, 55, 0.1);
+      border-radius: 20px;
+      padding: 30px;
+      transition: all 0.5s ease;
+    }
+
+    .title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      background: linear-gradient(135deg, #FFD700, #00E5FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 5px;
+      text-shadow: 0 0 20px rgba(0,229,255,0.4);
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #94a3b8;
+      margin-bottom: 25px;
+      letter-spacing: 1px;
+    }
+
+    .input-group { margin-bottom: 20px; text-align: left; }
+    .input-group label { display: block; font-size: 0.8rem; color: #cbd5e1; margin-bottom: 5px; }
+    .input-group input {
+      width: 100%;
+      padding: 12px 15px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: 0.3s;
+    }
+    .input-group input:focus {
+      border-color: #00E5FF;
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #d4af37, #00E5FF);
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+      transition: 0.3s;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.8);
+    }
+
+    #portal-screen { display: none; opacity: 0; }
+    
+    #passCanvas {
+      width: 100%;
+      border-radius: 15px;
+      border: 2px solid #FFD700;
+      box-shadow: 0 0 25px rgba(255, 215, 0, 0.3);
+      margin-top: 15px;
+    }
+
+    .file-upload-btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px dashed #00E5FF;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 15px;
+      transition: 0.3s;
+    }
+    .file-upload-btn:hover { background: rgba(0, 229, 255, 0.2); }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="container">
+    
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="glass-card">
+      <h1 class="title">NOVA GENESIS</h1>
+      <p class="subtitle">OFFICIAL ENTRY PASS PORTAL</p>
+      
+      <div class="input-group">
+        <label>USERNAME</label>
+        <input type="text" id="username" placeholder="Enter Username (e.g. SHASHIKALA)">
+      </div>
+      
+      <div class="input-group">
+        <label>PASSWORD</label>
+        <input type="password" id="password" placeholder="Enter Password">
+      </div>
+      
+      <button class="btn" onclick="handleLogin()">ACCESS PASS 🚀</button>
+      <p id="error-msg" style="color:#ff4757; font-size:0.85rem; margin-top:12px; display:none; font-weight:600;">Invalid Username or Password!</p>
+    </div>
+
+    <!-- MAIN PORTAL SCREEN -->
+    <div id="portal-screen" class="glass-card">
+      <h2 id="welcome-text" class="title" style="font-size: 1.3rem;"></h2>
+      <p class="subtitle">Upload profile photo to generate pass</p>
+
+      <label class="file-upload-btn">
+        📷 Upload Your Photo
+        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+      </label>
+
+      <div id="canvas-wrapper" style="display:none;">
+        <canvas id="passCanvas"></canvas>
+        <br><br>
+        <a id="downloadBtn" download="NOVA_GENESIS_PASS.jpg" style="text-decoration:none;">
+          <button class="btn">📥 DOWNLOAD PASS</button>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // USERS LIST FROM YOUR EXCEL SHEET (93 USERS)
+    const usersList = [
+      { "username": "SHASHIKALA", "pass": "BCOM1STSEM", "name": "Shashikala", "id": "NOVAGEN.001" },
+      { "username": "VINITA", "pass": "BCOM1STSEM", "name": "Vinita", "id": "NOVAGEN.002" },
+      { "username": "SNEHA", "pass": "BCOM1STSEM", "name": "Sneha", "id": "NOVAGEN.003" },
+      { "username": "SALVI", "pass": "BCOM1STSEM", "name": "Salvi", "id": "NOVAGEN.004" },
+      { "username": "GARIMA", "pass": "BCOM1STSEM", "name": "Garima", "id": "NOVAGEN.005" },
+      { "username": "JITENDRI", "pass": "BCOM1STSEM", "name": "Jitendri", "id": "NOVAGEN.006" },
+      { "username": "AAMENA", "pass": "BCOM1STSEM", "name": "Aamena", "id": "NOVAGEN.007" },
+      { "username": "NIDHI", "pass": "BCOM1STSEM", "name": "Nidhi", "id": "NOVAGEN.008" },
+      { "username": "SAMRIDDHI", "pass": "BCOM1STSEM", "name": "Samriddhi", "id": "NOVAGEN.009" },
+      { "username": "HIMANI", "pass": "BCOM1STSEM", "name": "Himani", "id": "NOVAGEN.010" },
+      { "username": "CHANDNI", "pass": "BCOM1STSEM", "name": "Chandni", "id": "NOVAGEN.011" },
+      { "username": "MAAHI", "pass": "BCOM1STSEM", "name": "Maahi", "id": "NOVAGEN.012" },
+      { "username": "SONAM", "pass": "BCOM1STSEM", "name": "Sonam", "id": "NOVAGEN.013" },
+      { "username": "PRIYANSHI", "pass": "BCOM1STSEM", "name": "Priyanshi", "id": "NOVAGEN.014" },
+      { "username": "NIYATI", "pass": "BCOM1STSEM", "name": "Niyati", "id": "NOVAGEN.015" },
+      { "username": "LAXMI", "pass": "BCOM1STSEM", "name": "Laxmi", "id": "NOVAGEN.016" },
+      { "username": "SAVITA", "pass": "BCOM1STSEM", "name": "Savita", "id": "NOVAGEN.017" },
+      { "username": "ANCHAL", "pass": "BCOM1STSEM", "name": "Anchal", "id": "NOVAGEN.018" },
+      { "username": "LTIKESHWARI", "pass": "BCOM1STSEM", "name": "Ltikeshwari", "id": "NOVAGEN.019" },
+      { "username": "MANISH", "pass": "BCOM1STSEM", "name": "Manish", "id": "NOVAGEN.020" },
+      { "username": "TANMAY", "pass": "BCOM1STSEM", "name": "Tanmay", "id": "NOVAGEN.021" },
+      { "username": "PANKAJ", "pass": "BCOM1STSEM", "name": "Pankaj", "id": "NOVAGEN.022" },
+      { "username": "CHULESHWAR", "pass": "BCOM1STSEM", "name": "Chuleshwar", "id": "NOVAGEN.023" },
+      { "username": "JALAJ", "pass": "BCOM1STSEM", "name": "Jalaj", "id": "NOVAGEN.024" },
+      { "username": "MAYANK", "pass": "BCOM1STSEM", "name": "Mayank", "id": "NOVAGEN.025" },
+      { "username": "LAKHSHYA", "pass": "BCOM1STSEM", "name": "Lakhshya", "id": "NOVAGEN.026" },
+      { "username": "GAMESH", "pass": "BCOM1STSEM", "name": "Gamesh", "id": "NOVAGEN.027" },
+      { "username": "NAITIK", "pass": "BCOM1STSEM", "name": "Naitik", "id": "NOVAGEN.028" },
+      { "username": "AYUSH", "pass": "BCOM1STSEM", "name": "Ayush", "id": "NOVAGEN.029" },
+      { "username": "ASHUTOSH", "pass": "BSC1STSEM", "name": "Ashutosh", "id": "NOVAGEN.030" },
+      { "username": "ABADESH", "pass": "BSC1STSEM", "name": "Abadesh", "id": "NOVAGEN.031" },
+      { "username": "SHASHANK", "pass": "BSC1STSEM", "name": "Shashank", "id": "NOVAGEN.032" },
+      { "username": "KAMAL", "pass": "BSC1STSEM", "name": "Kamal", "id": "NOVAGEN.033" },
+      { "username": "RAHUL", "pass": "BSC1STSEM", "name": "Rahul", "id": "NOVAGEN.034" },
+      { "username": "JAYVINAL", "pass": "BSC1STSEM", "name": "Jayvinal", "id": "NOVAGEN.035" },
+      { "username": "YUWANK", "pass": "BSC1STSEM", "name": "Yuwank", "id": "NOVAGEN.036" },
+      { "username": "BHAVESH", "pass": "BSC1STSEM", "name": "Bhavesh", "id": "NOVAGEN.037" },
+      { "username": "SHARAD", "pass": "BSC1STSEM", "name": "Sharad", "id": "NOVAGEN.038" },
+      { "username": "ADITYA", "pass": "BSC1STSEM", "name": "Aditya", "id": "NOVAGEN.039" },
+      { "username": "AYUSH", "pass": "BSC1STSEM", "name": "Ayush", "id": "NOVAGEN.040" },
+      { "username": "DARSHANA", "pass": "BSC1STSEM", "name": "Darshana", "id": "NOVAGEN.041" },
+      { "username": "SHEREYA", "pass": "BSC1STSEM", "name": "Shereya", "id": "NOVAGEN.042" },
+      { "username": "RAGINI", "pass": "BSC1STSEM", "name": "Ragini", "id": "NOVAGEN.043" },
+      { "username": "KASHISH", "pass": "BSC1STSEM", "name": "Kashish", "id": "NOVAGEN.044" },
+      { "username": "JAGRITI", "pass": "BSC1STSEM", "name": "Jagriti", "id": "NOVAGEN.045" },
+      { "username": "SHRUTI", "pass": "BSC1STSEM", "name": "Shruti", "id": "NOVAGEN.046" },
+      { "username": "KRITIKA", "pass": "BSC1STSEM", "name": "Kritika", "id": "NOVAGEN.047" },
+      { "username": "SUSHMITA", "pass": "BSC1STSEM", "name": "Sushmita", "id": "NOVAGEN.048" },
+      { "username": "MANSI", "pass": "BSC1STSEM", "name": "Mansi", "id": "NOVAGEN.049" },
+      { "username": "TIYA", "pass": "BSC1STSEM", "name": "Tiya", "id": "NOVAGEN.050" },
+      { "username": "CHITRAKALA", "pass": "BSC1STSEM", "name": "Chitrakala", "id": "NOVAGEN.051" },
+      { "username": "ANGEL", "pass": "BSC1STSEM", "name": "Angel", "id": "NOVAGEN.052" },
+      { "username": "MEGHA", "pass": "BSC1STSEM", "name": "Megha", "id": "NOVAGEN.053" },
+      { "username": "DOLI", "pass": "BSC1STSEM", "name": "Doli", "id": "NOVAGEN.054" },
+      { "username": "RIYA", "pass": "BSC1STSEM", "name": "Riya", "id": "NOVAGEN.055" },
+      { "username": "GITANJALI", "pass": "BSC1STSEM", "name": "Gitanjali", "id": "NOVAGEN.056" },
+      { "username": "DAMINI", "pass": "BSC1STSEM", "name": "Damini", "id": "NOVAGEN.057" },
+      { "username": "SIMRAN", "pass": "BSC1STSEM", "name": "Simran", "id": "NOVAGEN.058" },
+      { "username": "RITI", "pass": "BSC1STSEM", "name": "Riti", "id": "NOVAGEN.059" },
+      { "username": "REENA", "pass": "BSC1STSEM", "name": "Reena", "id": "NOVAGEN.060" },
+      { "username": "PURNIMA", "pass": "BSC1STSEM", "name": "Purnima", "id": "NOVAGEN.061" },
+      { "username": "TEJASWINI", "pass": "BSC1STSEM", "name": "Tejaswini", "id": "NOVAGEN.062" },
+      { "username": "TARINI", "pass": "BSC1STSEM", "name": "Tarini", "id": "NOVAGEN.063" },
+      { "username": "PRIYA", "pass": "BSC1STSEM", "name": "Priya", "id": "NOVAGEN.064" },
+      { "username": "HITAKSHI", "pass": "BSC1STSEM", "name": "Hitakshi", "id": "NOVAGEN.065" },
+      { "username": "ANYA", "pass": "BSC1STSEM", "name": "Anya", "id": "NOVAGEN.066" },
+      { "username": "NEHA", "pass": "BSC1STSEM", "name": "Neha", "id": "NOVAGEN.067" },
+      { "username": "SAVITA", "pass": "BSC1STSEM", "name": "Savita", "id": "NOVAGEN.068" },
+      { "username": "MAHI", "pass": "BSC1STSEM", "name": "Mahi", "id": "NOVAGEN.069" },
+      { "username": "JHARNA", "pass": "BSC1STSEM", "name": "Jharna", "id": "NOVAGEN.070" },
+      { "username": "VIVEK", "pass": "BA1STSEM", "name": "Vivek", "id": "NOVAGEN.071" },
+      { "username": "AASHISH", "pass": "BA1STSEM", "name": "Aashish", "id": "NOVAGEN.072" },
+      { "username": "PIYUSH", "pass": "BA1STSEM", "name": "Piyush", "id": "NOVAGEN.073" },
+      { "username": "MOHAN", "pass": "BA1STSEM", "name": "Mohan", "id": "NOVAGEN.074" },
+      { "username": "TUSHAL", "pass": "BA1STSEM", "name": "Tushal", "id": "NOVAGEN.075" },
+      { "username": "ISWAR", "pass": "BA1STSEM", "name": "Iswar", "id": "NOVAGEN.076" },
+      { "username": "SANJU", "pass": "BA1STSEM", "name": "Sanju", "id": "NOVAGEN.077" },
+      { "username": "MOJESH", "pass": "BA1STSEM", "name": "Mojesh", "id": "NOVAGEN.078" },
+      { "username": "BAMAN", "pass": "BA1STSEM", "name": "Baman", "id": "NOVAGEN.079" },
+      { "username": "DURGESH", "pass": "BA1STSEM", "name": "Durgesh", "id": "NOVAGEN.080" },
+      { "username": "NILESH", "pass": "BA1STSEM", "name": "Nilesh", "id": "NOVAGEN.081" },
+      { "username": "GRACE", "pass": "BA1STSEM", "name": "Grace", "id": "NOVAGEN.082" },
+      { "username": "DEEPANJALI", "pass": "BA1STSEM", "name": "Deepanjali", "id": "NOVAGEN.083" },
+      { "username": "JAGRITI", "pass": "BA1STSEM", "name": "Jagriti", "id": "NOVAGEN.084" },
+      { "username": "MANISHA", "pass": "BA1STSEM", "name": "Manisha", "id": "NOVAGEN.085" },
+      { "username": "TEJASVI", "pass": "BA1STSEM", "name": "Tejasvi", "id": "NOVAGEN.086" },
+      { "username": "ISHA", "pass": "BA1STSEM", "name": "Isha", "id": "NOVAGEN.087" },
+      { "username": "DEVIKA", "pass": "BA1STSEM", "name": "Devika", "id": "NOVAGEN.088" },
+      { "username": "KAVITA", "pass": "BA1STSEM", "name": "Kavita", "id": "NOVAGEN.089" },
+      { "username": "TULSI", "pass": "BA1STSEM", "name": "Tulsi", "id": "NOVAGEN.090" },
+      { "username": "DAMINEE", "pass": "BA1STSEM", "name": "Daminee", "id": "NOVAGEN.091" },
+      { "username": "TANYA", "pass": "BA1STSEM", "name": "Tanya", "id": "NOVAGEN.092" },
+      { "username": "DABAJANI", "pass": "BA1STSEM", "name": "Dabajani", "id": "NOVAGEN.093" }
+    ];
+
+    let currentUser = null;
+
+    // Background Particle Canvas
+    const bgCanvas = document.getElementById('bg-canvas');
+    const ctxBg = bgCanvas.getContext('2d');
+    let particles = [];
+
+    function resizeBg() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBg);
+    resizeBg();
+
+    for(let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        radius: Math.random() * 2,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5
+      });
+    }
+
+    function animateParticles() {
+      ctxBg.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      ctxBg.fillStyle = 'rgba(0, 229, 255, 0.7)';
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if(p.x < 0 || p.x > bgCanvas.width) p.vx *= -1;
+        if(p.y < 0 || p.y > bgCanvas.height) p.vy *= -1;
+        ctxBg.beginPath();
+        ctxBg.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctxBg.fill();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    // FLEXIBLE LOGIN FUNCTION (Case-Insensitive & Whitespace Trimmed)
+    function handleLogin() {
+      const uInput = document.getElementById("username").value.trim().toUpperCase();
+      const pInput = document.getElementById("password").value.trim().toUpperCase();
+      
+      const user = usersList.find(x => 
+        x.username.trim().toUpperCase() === uInput && 
+        x.pass.trim().toUpperCase() === pInput
+      );
+
+      if (user) {
+        currentUser = user;
+        document.getElementById("error-msg").style.display = "none";
+
+        confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+
+        gsap.to("#login-screen", {
+          duration: 0.6,
+          scale: 0.8,
+          opacity: 0,
+          onComplete: () => {
+            document.getElementById("login-screen").style.display = "none";
+            const portal = document.getElementById("portal-screen");
+            portal.style.display = "block";
+            document.getElementById("welcome-text").innerText = `WELCOME, ${user.name.toUpperCase()}`;
+            
+            gsap.fromTo(portal, 
+              { scale: 0.8, opacity: 0 }, 
+              { duration: 0.8, scale: 1, opacity: 1, ease: "back.out(1.7)" }
+            );
+          }
+        });
+      } else {
+        const errorElem = document.getElementById("error-msg");
+        errorElem.style.display = "block";
+        gsap.fromTo("#login-screen", { x: -10 }, { duration: 0.1, x: 10, repeat: 5, yoyo: true });
+      }
+    }
+
+    // Photo Render & Pass Generator
+    document.getElementById("photoInput").addEventListener("change", function(e) {
+      if(!e.target.files[0]) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const userPhoto = new Image();
+        userPhoto.onload = function() {
+          const masterImg = new Image();
+          masterImg.src = 'master_card.png';
+          
+          masterImg.onload = function() {
+            const canvas = document.getElementById("passCanvas");
+            const ctx = canvas.getContext("2d");
+
+            canvas.width = masterImg.width;
+            canvas.height = masterImg.height;
+
+            // Draw Base Card
+            ctx.drawImage(masterImg, 0, 0);
+
+            // Draw User Photo
+            ctx.drawImage(userPhoto, 115, 345, 350, 420);
+
+            // Draw Name and ID on Pass
+            ctx.fillStyle = "#FFD700";
+            ctx.font = "bold 38px Poppins";
+            ctx.fillText(currentUser.name, 540, 415);
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 32px Poppins";
+            ctx.fillText(currentUser.id, 540, 510);
+
+            document.getElementById("canvas-wrapper").style.display = "block";
+            gsap.from("#canvas-wrapper", { duration: 0.8, y: 20, opacity: 0 });
+
+            const downloadBtn = document.getElementById("downloadBtn");
+            downloadBtn.href = canvas.toDataURL("image/jpeg", 0.95);
+            downloadBtn.download = `NG2026_${currentUser.name.replace(/\s+/g, '_')}.jpg`;
+          };
+        };
+        userPhoto.src = event.target.result;
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+  </script>
+</body>
+</html>
